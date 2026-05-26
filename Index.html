@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Chat</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, sans-serif; background: #efe7dd; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        #header { background: #075e54; color: white; padding: 15px; font-size: 1.1rem; font-weight: bold; text-align: center; }
+        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg-wrapper { display: flex; flex-direction: column; max-width: 75%; }
+        .msg-wrapper.me { align-self: flex-end; }
+        .msg-wrapper.others { align-self: flex-start; }
+        .username { font-size: 0.75rem; color: #666; margin-bottom: 2px; }
+        .me .username { display: none; }
+        .msg { padding: 10px 14px; border-radius: 15px; font-size: 0.95rem; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
+        .me .msg { background: #d9fdd3; color: #111517; border-top-right-radius: 2px; }
+        .others .msg { background: white; color: #111517; border-top-left-radius: 2px; }
+        #input-container { background: #f0f0f0; padding: 10px; display: flex; gap: 10px; border-top: 1px solid #ddd; }
+        #message-input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 20px; font-size: 1rem; outline: none; }
+        button { padding: 12px 20px; background: #00a884; color: white; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="header">Our Chat Room</div>
+    <div id="chat-box"></div>
+    <div id="input-container">
+        <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const chatBox = document.getElementById('chat-box');
+        const messageInput = document.getElementById('message-input');
+        let myName = prompt("Enter your nickname:") || "Anonymous";
+
+        socket.on('chat message', (data) => {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('msg-wrapper', data.user === myName ? 'me' : 'others');
+
+            const nameLabel = document.createElement('span');
+            nameLabel.classList.add('username');
+            nameLabel.textContent = data.user;
+            wrapper.appendChild(nameLabel);
+
+            const bubble = document.createElement('div');
+            bubble.classList.add('msg');
+            bubble.textContent = data.text;
+            wrapper.appendChild(bubble);
+
+            chatBox.appendChild(wrapper);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        function sendMessage() {
+            const msgText = messageInput.value.trim();
+            if (msgText) {
+                socket.emit('chat message', { user: myName, text: msgText });
+                messageInput.value = '';
+            }
+        }
+        messageInput.addEventListener("keypress", (e) => { if (e.key === "Enter") sendMessage(); });
+    </script>
+</body>
+</html>
